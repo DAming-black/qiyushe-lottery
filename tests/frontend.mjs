@@ -43,3 +43,9 @@ const callbackHash='#access_token=test-callback-token&refresh_token=test-callbac
 assert.equal(await callbackTest(callbackHash,Response.json({id:'test-user-id',email:'owner@example.test'})),1);assert.ok(store.has('qiyushe-supabase-session-v1'));assert.match(elements.get('authStatus').textContent,/已登录/);assert.equal(location.hash,'');console.log('PASS 邮件链接回调：先清除地址栏令牌，再向 Supabase 验证并登录');
 await callbackTest(callbackHash,Response.json({message:'Invalid token'},{status:401}));assert.ok(!store.has('qiyushe-supabase-session-v1'));assert.match(elements.get('authStatus').textContent,/登录失败/);console.log('PASS 伪造或失效的邮件回调不会建立会话');
 assert.equal(await callbackTest('#error=access_denied&error_description=expired',Response.json({})),0);assert.ok(!store.has('qiyushe-supabase-session-v1'));assert.equal(location.hash,'');assert.match(elements.get('authStatus').textContent,/过期/);console.log('PASS 过期链接给出重发提示并清除地址栏错误参数');
+const goodFetch=ctx.fetch;
+ctx.fetch=async()=>Response.json({error:'test network unavailable'},{status:503});
+await vm.runInContext("loadEvent('test-activity')",ctx);
+assert.equal(elements.get('memberSelect').disabled,true);assert.equal(elements.get('selectMember').disabled,true);assert.ok(!elements.get('retryMembers').classes.has('hidden'));assert.match(elements.get('memberLoadStatus').textContent,/没有执行抽签/);console.log('PASS 名单读取失败：显示错误、禁用抽签按钮、提供重试入口');
+ctx.fetch=goodFetch;await elements.get('retryMembers').onclick();
+assert.equal(elements.get('memberSelect').disabled,false);assert.equal(elements.get('selectMember').disabled,false);assert.equal(elements.get('memberSelect').children.length,5);assert.ok(elements.get('retryMembers').classes.has('hidden'));assert.match(elements.get('memberLoadStatus').textContent,/已加载 4 位/);console.log('PASS 网络恢复后重试：重新读取名单并恢复姓名选择');
