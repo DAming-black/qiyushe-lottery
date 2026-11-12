@@ -12,14 +12,12 @@
   to = "https://talzluzsziyjxtykjgxl.supabase.co/auth/v1/:splat"
   status = 200
   force = true
-  headers = {Origin = "https://daming-black.github.io"}
 
 [[redirects]]
   from = "/supabase/functions/v1/quick-function"
   to = "https://talzluzsziyjxtykjgxl.supabase.co/functions/v1/quick-function"
   status = 200
   force = true
-  headers = {Origin = "https://daming-black.github.io"}
 
 [[headers]]
   for = "/supabase/*"

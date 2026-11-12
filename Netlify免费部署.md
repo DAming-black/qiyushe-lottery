@@ -32,8 +32,8 @@
 - GitHub Pages 仍发布 `site/`，使用原方式；Netlify 发布 `netlify-dist/`，构建时加 `proxyBasePath: '/supabase'`。
 - 网页密码登录、会话刷新、健康检查和抽签请求都使用同一网站下的 `/supabase/...`。
 - Netlify 重写只有两个固定上游规则：Supabase Auth 和指定的 `quick-function`，不接收任意目标 URL。
-- 上游请求使用已配置的 GitHub Origin 值，以兼容当前 Edge Function 来源白名单。Origin 不是认证，创建活动仍由 Supabase 验证用户令牌，管理页仍需管理凭证，结果由数据库事务固定。
-- 该公共 Origin 值不是密钥，不能代替用户登录；前端、转发配置都没有 service_role。
+- 转发保留浏览器原有 Origin，不额外添加或伪造第二个 Origin。部署后把实际 Netlify 来源加入 Supabase `FRONTEND_ORIGINS`，保留仍在使用的 GitHub 来源；域名末尾不带 `/`。Origin 不是认证，创建活动仍由 Supabase 验证用户令牌，管理页仍需管理凭证，结果由数据库事务固定。
+- 来源白名单不能代替用户登录；前端、转发配置都没有 service_role。
 - 后台仍返回 `Cache-Control: no-store`；不得为登录或抽签响应额外开启缓存。若以后改转发规则，务必重新检查方法、请求体、授权头与响应缓存。
 - 用户登录密码和会话会通过 Netlify 的 HTTPS 转发到 Supabase。不要开启请求体日志、公开调试转储或将敏感数据放进 URL。
 
