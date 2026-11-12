@@ -19,7 +19,7 @@
   try{
    let response;try{response=await fetch(url,{method,headers:{apikey:c.publishableKey,'Content-Type':'application/json',...extra},...(method==='GET'?{}:{body:JSON.stringify(body)}),signal:controller.signal})}catch(e){throw Error(e.name==='AbortError'?'Supabase 请求超时，请检查该网络能否访问项目地址。':'无法连接 Supabase：'+e.message+'。请检查后台地址、跨域配置及实际网络可达性。')}
    let data;try{data=await response.json()}catch{throw Error('后台返回了非 JSON 内容（HTTP '+response.status+'）')}
-   if(!response.ok){const err=Error(data.error_description||data.msg||data.message||data.error||'请求失败（HTTP '+response.status+'）');err.status=response.status;throw err}
+   if(!response.ok){const err=Error(data.error_description||data.msg||data.message||data.error||'请求失败（HTTP '+response.status+'）');err.status=response.status;err.code=data.error_code||data.code;throw err}
    return data;
   }finally{clearTimeout(timer)}
  }
@@ -35,7 +35,7 @@
   return http(c.supabaseUrl+'/functions/v1/'+c.functionName,{operation,payload},token?{Authorization:'Bearer '+token}:{});
  }
  function status(text){get('authStatus').textContent=text}
- function renderAuth(){if(!get('authStatus'))return;status(session?.user?.email?'已登录：'+session.user.email:'发起人需要邮箱验证登录；群成员抽签无需登录。');get('authLogout').classList.toggle('hidden',!session);get('authFields').classList.toggle('hidden',!!session)}
+ function renderAuth(){if(!get('authStatus'))return;status(session?.user?.email?'已登录：'+session.user.email:'发起人使用邮箱和密码登录，无需收验证码；群成员抽签无需登录。');get('authLogout').classList.toggle('hidden',!session);get('authFields').classList.toggle('hidden',!!session)}
  async function action(button,fn){button.disabled=true;try{await fn()}catch(e){status(e.message)}finally{button.disabled=false}}
  async function consumeCallback(){
   const params=new URLSearchParams(location.hash.slice(1));
@@ -53,16 +53,24 @@
    saveSession({access_token:token,refresh_token:refresh,user,expires_at:Date.now()/1000+(Number.isFinite(duration)&&duration>0?Math.min(duration,86400):3600)});
   }catch(e){status('邮箱链接登录失败：'+e.message)}
  }
- get('authSend').onclick=()=>action(get('authSend'),async()=>{
-  email=get('authEmail').value.trim();if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))throw Error('请输入有效邮箱');
-  const redirect=location.origin+location.pathname;
-  await http(settings().supabaseUrl+'/auth/v1/otp?redirect_to='+encodeURIComponent(redirect),{email,create_user:true});
-  status('登录邮件已请求发送。请在要管理活动的浏览器中打开邮件里的 Sign in 链接；若邮件含数字验证码，也可在这里输入。');
- });
- get('authVerify').onclick=()=>action(get('authVerify'),async()=>{
-  email=get('authEmail').value.trim();const token=get('authCode').value.trim();if(!email||!/^\d{6,10}$/.test(token))throw Error('请输入邮箱及邮件内的数字验证码');
-  const data=await http(settings().supabaseUrl+'/auth/v1/verify',{email,token,type:'email'});saveSession({...data,expires_at:Date.now()/1000+data.expires_in});get('authCode').value='';
- });
+ get('authForm').onsubmit=event=>{
+  event.preventDefault();
+  return action(get('authLogin'),async()=>{
+   try {
+    email=get('authEmail').value.trim();const password=get('authPassword').value;
+    if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))throw Error('请输入管理员账号邮箱');
+    if(!password)throw Error('请输入密码。首次使用需由项目管理员在 Supabase 中准备密码账号。');
+    status('正在登录…');
+    const data=await http(settings().supabaseUrl+'/auth/v1/token?grant_type=password',{email,password});
+    if(!data.access_token||!data.refresh_token||!data.user?.id)throw Error('登录响应不完整，请稍后重试。');
+    saveSession({access_token:data.access_token,refresh_token:data.refresh_token,user:data.user,expires_at:Date.now()/1000+(Number(data.expires_in)||3600)});
+   }catch(e){
+    if(e.code==='invalid_credentials')throw Error('邮箱或密码不正确；原先只通过邮件链接登录的账号，需要先设置密码。');
+    if(e.code==='email_not_confirmed')throw Error('管理员账号尚未确认，请由项目管理员在 Supabase 后台检查该账号。');
+    throw e;
+   }finally{get('authPassword').value=''}
+  });
+ };
  get('authLogout').onclick=()=>action(get('authLogout'),async()=>{try{const token=await accessToken();if(token)await http(settings().supabaseUrl+'/auth/v1/logout',{}, {Authorization:'Bearer '+token})}finally{saveSession(null)}});
  get('cloudCheck').onclick=()=>action(get('cloudCheck'),async()=>{const result=await request('health',{});status('服务连接正常：'+result.service+' / '+result.database)});
  renderAuth();

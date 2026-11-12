@@ -6,12 +6,11 @@ class Element{constructor(){this.value='';this.textContent='';this.children=[];t
 const elements=new Map([...html.matchAll(/id="([^"]+)"/g)].map(m=>[m[1],new Element()]));
 const document={getElementById:id=>{assert.ok(elements.has(id),'missing '+id);return elements.get(id)},querySelectorAll:()=>[],createElement:()=>new Element(),createTextNode:s=>s};
 const location={origin:'https://user.github.io',pathname:'/qiyushe-lottery/',search:'',_hash:'',protocol:'https:',get hash(){return this._hash},set hash(v){this._hash=v?(v.startsWith('#')?v:'#'+v):''}};
-const store=new Map();let created=false,drawn=false,copied='';let sentOtp=false;
+const store=new Map();let created=false,drawn=false,copied='';let passwordRequests=0;
 const rows=['甲','乙','丙','丁'].map(name=>({name,drawn_at:null,winner:null}));
 const ctx=vm.createContext({document,location,URL,URLSearchParams,AbortController,atob,console,setTimeout,clearTimeout,history:{replaceState(_,__,url){location.hash=new URL(url).hash;location.search=new URL(url).search}},localStorage:{getItem:k=>store.get(k)||null,setItem:(k,v)=>store.set(k,v),removeItem:k=>store.delete(k)},navigator:{clipboard:{async writeText(s){copied=s}}},window:{LOTTERY_CONFIG:{supabaseUrl:'https://project.example',publishableKey:'sb_publishable_test_only',functionName:'lottery'},addEventListener(){}},fetch:async(url,options)=>{
  const b=options.body?JSON.parse(options.body):{};
- if(new URL(url).pathname.endsWith('/otp')){sentOtp=true;return Response.json({})}
- if(url.endsWith('/verify'))return Response.json({access_token:'test-user-token',refresh_token:'test-refresh',expires_in:3600,user:{email:'owner@example.test'}});
+ if(url.endsWith('/token?grant_type=password')){passwordRequests++;assert.equal(b.email,'owner@example.test');if(b.password==='wrong-test')return Response.json({error_code:'invalid_credentials',msg:'Invalid login credentials'},{status:400});assert.equal(b.password,'correct-test-placeholder');return Response.json({access_token:'test-user-token',refresh_token:'test-refresh',expires_in:3600,user:{id:'test-user-id',email:'owner@example.test'}});}
  if(url.endsWith('/logout'))return Response.json({});
  assert.equal(url,'https://project.example/functions/v1/lottery');
  if(b.operation==='create'){assert.equal(options.headers.Authorization,'Bearer test-user-token');created=true;return Response.json({id:'test-activity',admin:'test-admin-capability',tickets:rows.map(r=>({name:r.name,code:'test-code'}))})}
@@ -24,12 +23,13 @@ const ctx=vm.createContext({document,location,URL,URLSearchParams,AbortControlle
 vm.runInContext(readFileSync('site/cloud.js','utf8'),ctx);
 vm.runInContext(html.match(/<script>([\s\S]*?)<\/script>/)[1],ctx);
 await assert.rejects(vm.runInContext("api('create',{})",ctx),/邮箱登录/);assert.ok(elements.get('authEmail').focused);console.log('PASS 未登录创建活动时定位邮箱登录，成员流程不要求登录');
-elements.get('authEmail').value='owner@example.test';await elements.get('authSend').onclick();assert.ok(sentOtp);elements.get('authCode').value='123456';await elements.get('authVerify').onclick();assert.match(elements.get('authStatus').textContent,/已登录/);console.log('PASS 邮箱验证码请求、验证登录和前端会话处理');
+elements.get('authEmail').value='owner@example.test';elements.get('authPassword').value='wrong-test';await elements.get('authForm').onsubmit({preventDefault(){}});assert.equal(elements.get('authPassword').value,'');assert.ok(!store.has('qiyushe-supabase-session-v1'));assert.match(elements.get('authStatus').textContent,/邮箱或密码不正确/);console.log('PASS 错误密码不建立会话，并清空密码框');
+elements.get('authPassword').value='correct-test-placeholder';await elements.get('authForm').onsubmit({preventDefault(){}});assert.equal(passwordRequests,2);assert.match(elements.get('authStatus').textContent,/已登录/);assert.equal(elements.get('authPassword').value,'');assert.ok(!store.get('qiyushe-supabase-session-v1').includes('correct-test-placeholder'));assert.ok(!html.includes('id="authSend"'));console.log('PASS 邮箱密码登录：不调用发信接口，不保存密码，登录后清空密码框');
 elements.get('createNav').onclick();assert.ok(elements.get('createForm').scrolled);
 elements.get('title').value='前端验证';elements.get('names').value='甲、乙、丙、丁';elements.get('quota').value='2';vm.runInContext('renderRoster()',ctx);await elements.get('createForm').onsubmit({preventDefault(){}});assert.ok(created);await vm.runInContext('route()',ctx);
 assert.equal(elements.get('groupLink').value,'https://user.github.io/qiyushe-lottery/?event=test-activity');await elements.get('copyGroup').onclick();assert.ok(copied.includes('?event=test-activity'));assert.ok(!copied.includes('test-admin-capability'));console.log('PASS 顿号名单创建与 Pages 子路径群链接，不泄露管理凭证');
 location.search='?event=test-activity';location.hash='';await vm.runInContext('route()',ctx);assert.equal(elements.get('memberSelect').children.length,5);assert.ok(elements.get('authPanel').classes.has('hidden'));elements.get('memberSelect').value='0';await elements.get('selectMember').onclick();await elements.get('drawButton').onclick();assert.ok(drawn);assert.ok(elements.get('drawButton').classes.has('hidden'));console.log('PASS 共用链接选姓名、扭蛋揭晓与隐藏重复按钮，动漫 SVG 保留');
-await elements.get('authLogout').onclick();assert.ok(!store.has('qiyushe-supabase-session-v1'));console.log('PASS 退出登录清除本机会话；5 项前端处理测试通过（不是浏览器视觉测试）');
+await elements.get('authLogout').onclick();assert.ok(!store.has('qiyushe-supabase-session-v1'));console.log('PASS 退出登录清除本机会话；前端密码登录与抽签处理测试通过（不是浏览器视觉测试）');
 async function callbackTest(fragment,response){
  store.clear();location.search='';location.hash=fragment;
  let checked=0;
