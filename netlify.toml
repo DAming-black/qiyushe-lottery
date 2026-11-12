@@ -1,0 +1,38 @@
+[build]
+  command = "node scripts/prepare-netlify.mjs"
+  publish = "netlify-dist"
+
+[build.environment]
+  NODE_VERSION = "24"
+
+# Fixed upstream only: this is not an arbitrary URL proxy. Passwords and user
+# sessions pass through HTTPS; there is no service_role key in this config.
+[[redirects]]
+  from = "/supabase/auth/v1/*"
+  to = "https://talzluzsziyjxtykjgxl.supabase.co/auth/v1/:splat"
+  status = 200
+  force = true
+  headers = {Origin = "https://daming-black.github.io"}
+
+[[redirects]]
+  from = "/supabase/functions/v1/quick-function"
+  to = "https://talzluzsziyjxtykjgxl.supabase.co/functions/v1/quick-function"
+  status = 200
+  force = true
+  headers = {Origin = "https://daming-black.github.io"}
+
+[[headers]]
+  for = "/supabase/*"
+  [headers.values]
+    Cache-Control = "no-store"
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    Referrer-Policy = "no-referrer"
+    X-Content-Type-Options = "nosniff"
+
+[[headers]]
+  for = "/config.js"
+  [headers.values]
+    Cache-Control = "no-cache"

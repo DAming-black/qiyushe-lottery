@@ -12,6 +12,10 @@
   if(config.publishableKey.startsWith('sb_secret_'))throw Error('禁止在前端使用后台密钥，请改用 publishable key。');
   if(config.publishableKey.split('.').length===3){try{const payload=JSON.parse(atob(config.publishableKey.split('.')[1].replace(/-/g,'+').replace(/_/g,'/')));if(payload.role==='service_role')throw Error('service_role')}catch(e){if(e.message==='service_role')throw Error('禁止在前端配置 service_role。')}}
   if(!/^[a-z0-9_-]+$/i.test(config.functionName||''))throw Error('云函数名称配置无效');
+  if(config.proxyBasePath){
+   if(config.proxyBasePath!=='/supabase')throw Error('后台转发路径配置无效');
+   return {...config,supabaseUrl:location.origin+config.proxyBasePath};
+  }
   return config;
  }
  async function http(url,body,extra={},method='POST'){

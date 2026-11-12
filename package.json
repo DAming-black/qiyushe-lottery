@@ -4,7 +4,7 @@
  "private":true,
  "type":"module",
  "engines":{"node":">=24"},
- "scripts":{"test":"node tests/edge.mjs && node tests/frontend.mjs","test:postgres":"node tests/postgres.mjs"},
+ "scripts":{"test":"node tests/edge.mjs && node tests/frontend.mjs && node tests/proxy.mjs","test:postgres":"node tests/postgres.mjs","build:netlify":"node scripts/prepare-netlify.mjs"},
  "dependencies":{},
  "devDependencies":{}
 }

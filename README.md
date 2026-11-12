@@ -1,5 +1,7 @@
 # 奇遇社：GitHub Pages + Supabase 版
 
+部分网络无法从浏览器直连 Supabase 时，可试用新增的 [Netlify 免费同站转发方案](Netlify免费部署.md)。该方案代码已备好并通过本地测试，实际 Netlify 项目与多网络验收尚未完成。它保留现有数据，不代表任何网络都保证可达。
+
 按参考架构实现：腾讯云域名 → DNSPod → GitHub Pages 前端与 HTTPS → Supabase Auth / PostgreSQL / Edge Function → Resend 邮箱验证码邮件。
 
 不需要单独购买虚拟机，不依赖 ChatGPT Sites；但域名、平台配额、邮件发送等仍可能产生费用。代码已准备并做本地验证，**没有实际创建/发布 GitHub 仓库、Supabase 项目或购买域名，也未完成真实手机微信验证**。免费配额不等于无费用或无网络限制，实际费用在开通前核对。

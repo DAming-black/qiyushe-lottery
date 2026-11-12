@@ -8,3 +8,4 @@ node_modules/
 data/
 backups/
 test-output/
+netlify-dist/
