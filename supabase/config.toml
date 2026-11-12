@@ -1,0 +1,6 @@
+project_id = "qiyushe"
+
+# Public draws are allowed without login. The handler itself authenticates
+# activity creation, and all SQL access is restricted to its service role.
+[functions.lottery]
+verify_jwt = false
