@@ -1,10 +1,17 @@
 {
- "name":"qiyushe-github-supabase",
- "version":"1.0.0",
- "private":true,
- "type":"module",
- "engines":{"node":">=24"},
- "scripts":{"test":"node tests/edge.mjs && node tests/frontend.mjs && node tests/proxy.mjs","test:postgres":"node tests/postgres.mjs","build:netlify":"node scripts/prepare-netlify.mjs"},
- "dependencies":{},
- "devDependencies":{}
+  "name": "qiyushe-github-supabase",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "test": "node tests/edge.mjs && node tests/frontend.mjs && node tests/proxy.mjs && node tests/play.mjs",
+    "test:postgres": "node tests/postgres.mjs",
+    "build:netlify": "node scripts/prepare-netlify.mjs",
+    "test:upgrade": "node tests/upgrade-postgres.mjs"
+  },
+  "dependencies": {},
+  "devDependencies": {}
 }

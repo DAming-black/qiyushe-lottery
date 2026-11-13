@@ -21,6 +21,7 @@ const ctx=vm.createContext({document,location,URL,URLSearchParams,AbortControlle
  throw Error('unexpected operation '+b.operation);
 }});
 vm.runInContext(readFileSync('site/cloud.js','utf8'),ctx);
+vm.runInContext(readFileSync('site/play.js','utf8'),ctx);
 vm.runInContext(html.match(/<script>([\s\S]*?)<\/script>/)[1],ctx);
 await assert.rejects(vm.runInContext("api('create',{})",ctx),/邮箱登录/);assert.ok(elements.get('authEmail').focused);console.log('PASS 未登录创建活动时定位邮箱登录，成员流程不要求登录');
 elements.get('authEmail').value='owner@example.test';elements.get('authPassword').value='wrong-test';await elements.get('authForm').onsubmit({preventDefault(){}});assert.equal(elements.get('authPassword').value,'');assert.ok(!store.has('qiyushe-supabase-session-v1'));assert.match(elements.get('authStatus').textContent,/邮箱或密码不正确/);console.log('PASS 错误密码不建立会话，并清空密码框');

@@ -1,6 +1,6 @@
 export function createHandler({projectUrl,serviceKey,origins,creatorEmails=[],fetchImpl=fetch}) {
  const allowed=new Set(origins);
- const operations=new Set(['create','event','admin','member','member-draw','ticket','draw','health']);
+ const operations=new Set(['create','register','event','admin','member','member-draw','ticket','draw','health']);
  return async function(request) {
   const origin=request.headers.get('origin');
   const headers={'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store','Vary':'Origin','Access-Control-Allow-Methods':'POST, OPTIONS','Access-Control-Allow-Headers':'authorization, apikey, content-type, x-client-info','Access-Control-Max-Age':'600'};
